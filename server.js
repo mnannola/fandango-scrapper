@@ -13,7 +13,7 @@ app.get('/', (req, res, next) => {
             })
             .catch(err => reject('Scraping Failed'));
         });
-        seats.then(data => res.send(data))
+        seats.then(data => res.render('index', {data: {movies: data}}))
     } catch (e) {
         next(e);
     }
