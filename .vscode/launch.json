@@ -8,7 +8,8 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceFolder}/index.js"
+            "program": "${workspaceFolder}/server.js",
+            "runtimeVersion": "10.15.3"
         }
     ]
 }
