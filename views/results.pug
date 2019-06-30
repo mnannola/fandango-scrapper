@@ -1,0 +1,21 @@
+html
+    head
+        title Movie Scrapper
+    body
+        h1 Movie Results
+        ul
+            if data.movies 
+                for movie in data.movies
+                    li
+                        h3 #{movie.theaterName}
+                        p Times: 
+                        ol
+                            for time in movie.availableTimes
+                                if (time.seats.length > 0) 
+                                    li
+                                        h4 #{time.time} 
+                                        p #{time.seats}
+            else
+                p Error fetching movies           
+                            
+

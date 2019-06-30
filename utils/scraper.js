@@ -1,28 +1,26 @@
 const puppeteer = require('puppeteer');
 
-const NUMBER_OF_SEATS = '1';
-const MOVIE_PAGE = 'toy-story-4-185803';
 const ZIP_CODE = '78613';
-const DATE = '?date=2019-06-29';
-//const DATE = '';
-//const THEATER_PAGE = '&pn=2';
- const THEATER_PAGE = '';
 
-const fetchSeats = async () => {
+const ZIPCODE_COOKIE =  {
+        name: 'zip',
+        value: ZIP_CODE,
+        domain: '.fandango.com',
+        path: '/'
+};
+
+const fetchSeats = async (movieLink, numOfSeats, date) => {
     const browser = await puppeteer.launch({headless: false});
     try {        
         const page = await browser.newPage();
         // Set zip code before navigating to fandango.com
-        await page.setCookie({
-            name: 'zip', 
-            value: ZIP_CODE,
-            domain: '.fandango.com',
-            path: '/'
-        });
-
-        await page.goto(`https://www.fandango.com/${MOVIE_PAGE}/movie-times${DATE}${THEATER_PAGE}`);
-
+        await page.setCookie(ZIPCODE_COOKIE);
+        
+        await page.goto(movieLink);
+        await page.goto(page.url().replace('movie-overview', `movie-times?date=${date}`));
+        //await page.waitForSelector('.showtime-btn--available');
         const listOfTheaters = await page.evaluate(() => {
+            debugger;
             // Loop through each theater on page
             const theaters = document.querySelectorAll('.theater__wrap');
             let theaterArray = [];
@@ -39,7 +37,7 @@ const fetchSeats = async () => {
                         seats: []
                     });
                 }
-
+                debugger;
                 theaterArray.push({
                     theaterName,
                     availableTimes
@@ -66,7 +64,7 @@ const fetchSeats = async () => {
                 /* await page.waitFor(1000); */
 
                 // Pick adult seats and click submit  //TODO: Pass this value in
-                page.select('tbody:nth-child(1) select', NUMBER_OF_SEATS);
+                page.select('tbody:nth-child(1) select', numOfSeats);
                 try {
                     await page.click('button#NewCustomerCheckoutButton');
                     await page.waitForSelector('div.standard.availableSeat', { timeout: 1000});
@@ -98,7 +96,7 @@ const fetchSeats = async () => {
                         debugger;
                         return seatIds;
                     });
-                    if (seats.length >= parseInt(NUMBER_OF_SEATS)) {
+                    if (seats.length >= parseInt(numOfSeats)) {
                         listOfTheaters[i].availableTimes[j].seats = seats;
                         console.log('Movie Time: ', time.time);
                         console.log('Seat Ids: ', seats);
@@ -118,4 +116,36 @@ const fetchSeats = async () => {
     }
 };
 
-module.exports.fetchSeats = fetchSeats;
+const fetchMovieList = async () => {
+    const browser = await puppeteer.launch({headless: false});
+    try {        
+        const page = await browser.newPage();
+
+        await page.setCookie(ZIPCODE_COOKIE);
+        await page.goto(`https://www.fandango.com/moviesintheaters`);
+        
+        const movieList = await page.evaluate(() => {
+            return Array.from(document.querySelectorAll('.movie-list .visual-item'))
+            .map( movie => ({
+                title: movie.querySelector('.visual-title').textContent.trim(),
+                link: movie.querySelector('.visual-title').getAttribute('href')
+            }))
+            .slice(0,20)
+            .sort((a,b) => a.title.localeCompare(b.title)); // Sort by title asc
+            
+        });
+        await browser.close();
+        return movieList;
+
+    } catch (err) {
+        console.log(err);
+        await browser.close();
+    }
+};
+
+module.exports = {
+    fetchSeats,
+    fetchMovieList
+};
+
+

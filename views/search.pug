@@ -1,0 +1,19 @@
+html
+    head
+        title Search Movies
+    body
+        h1 Search for Movies
+        form(action="/results", method="post")
+            div
+                label(for='movieSelect') Movies:                
+                select#movieSelect(name='movie')
+                    for movie in data.movieList
+                        option(value=`${movie.link}`) #{movie.title}
+            div
+                label(for='numOfSeats') Number of Seats:
+                input#numOfSeats(type='text', name='numOfSeats')
+            div
+                label(for='movieDate') Date:
+                input#movieDate(type='date', name='date')
+            div
+                input(type='submit', value='Search')          
