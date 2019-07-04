@@ -9,46 +9,43 @@ const ZIPCODE_COOKIE =  {
         path: '/'
 };
 
-const fetchSeats = async (movieLink, numOfSeats, date) => {
-    const browser = await puppeteer.launch({headless: false});
-    try {        
+const fetchTheaters = async(movieLink, date) => {
+    const browser = await puppeteer.launch({headless: true});
+    try {
         const page = await browser.newPage();
         // Set zip code before navigating to fandango.com
         await page.setCookie(ZIPCODE_COOKIE);
         
         await page.goto(movieLink);
         await page.goto(page.url().replace('movie-overview', `movie-times?date=${date}`));
-        //await page.waitForSelector('.showtime-btn--available');
+
         const listOfTheaters = await page.evaluate(() => {
-            debugger;
-            // Loop through each theater on page
-            const theaters = document.querySelectorAll('.theater__wrap');
-            let theaterArray = [];
-            for (let i = 0; i < theaters.length; i++) {
-                const theaterName = theaters[i].querySelector('.theater__name a.color-light').innerHTML;
-
-                // Check for available times for the theater
-                const availableTimeButtons =  theaters[i].querySelectorAll('.showtime-btn--available');                 
-                const availableTimes = [];
-                for (let j = 0; j < availableTimeButtons.length; j++) {
-                    availableTimes.push({
-                        time: availableTimeButtons[j].innerText,
-                        timeLink: availableTimeButtons[j].getAttribute('href'),
+            // Loop through theaters and find avail times for the movie
+            return Array.from(document.querySelectorAll('.theater__wrap'))
+            .map( theater => ({
+                theaterName: theater.querySelector('.theater__name a.color-light').innerHTML,
+                availableTimes: Array.from(theater.querySelectorAll('.showtime-btn--available'))
+                    .map(time => ({
+                        time: time.innerText,
+                        timeLink: time.getAttribute('href'),
                         seats: []
-                    });
-                }
-                debugger;
-                theaterArray.push({
-                    theaterName,
-                    availableTimes
-                });
-            }
-
-            // Loop through available times
-            // Print available times
-            return theaterArray;
+                    }))
+            }));
         });
-        // Loop through theater results
+        await browser.close();
+        return listOfTheaters;
+    } catch (err) {
+        console.log(err);
+        await browser.close();   
+    }
+}
+
+const fetchSeats = async (listOfTheaters, numOfSeats) => {
+    const browser = await puppeteer.launch({headless: true});
+    try {        
+        const page = await browser.newPage();
+        // Set zip code before navigating to fandango.com
+        await page.setCookie(ZIPCODE_COOKIE);
         
         /* for (let i = 0; i < listOfTheaters.length; i++) { */ 
         for (let i = 0; i < 1; i++) {
@@ -61,9 +58,8 @@ const fetchSeats = async (movieLink, numOfSeats, date) => {
                 // TODO: Filter out time if it's too late
 
                 await page.goto(time.timeLink);
-                /* await page.waitFor(1000); */
 
-                // Pick adult seats and click submit  //TODO: Pass this value in
+                // Pick adult seats and click submit
                 page.select('tbody:nth-child(1) select', numOfSeats);
                 try {
                     await page.click('button#NewCustomerCheckoutButton');
@@ -117,7 +113,7 @@ const fetchSeats = async (movieLink, numOfSeats, date) => {
 };
 
 const fetchMovieList = async () => {
-    const browser = await puppeteer.launch({headless: false});
+    const browser = await puppeteer.launch({headless: true});
     try {        
         const page = await browser.newPage();
 
@@ -144,6 +140,7 @@ const fetchMovieList = async () => {
 };
 
 module.exports = {
+    fetchTheaters,
     fetchSeats,
     fetchMovieList
 };

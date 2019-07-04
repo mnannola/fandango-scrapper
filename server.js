@@ -33,11 +33,13 @@ app.get('/search', async(req, res, next) => {
 app.post('/results', async (req, res, next) => {
     try {
         const { body } = req;
-        const seats = await scraper.fetchSeats(
+/*         const seats = await scraper.fetchSeats(
             body.movie, 
             body.numOfSeats,
             body.date
-        );
+        ); */
+        const theaters = await scraper.fetchTheaters(body.movie, body.date);
+        const seats = await scraper.fetchSeats(theaters, body.numOfSeats);
         res.render('results', {data: {movies: seats}});
     } catch (e) {
         next(e);
