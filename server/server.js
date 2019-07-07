@@ -24,7 +24,8 @@ app.get('/search', async(req, res, next) => {
             title: 'Anna',
             link:'http://www.fandango.com'
         }] */
-        res.render('search', { data: { movieList: movieList } });
+        //res.render('search', { data: { movieList: movieList } });
+        res.send(movieList);
     } catch (e) {
         next(e);
     }
@@ -41,6 +42,16 @@ app.post('/results', async (req, res, next) => {
         const theaters = await scraper.fetchTheaters(body.movie, body.date);
         const seats = await scraper.fetchSeats(theaters, body.numOfSeats);
         res.render('results', {data: {movies: seats}});
+    } catch (e) {
+        next(e);
+    }
+});
+
+app.post('/theaters', async (req, res, next) => {
+    try {
+        const { body } = req;
+        const theaters = await scraper.fetchTheaters(body.movie, body.date);
+        res.send(theaters);
     } catch (e) {
         next(e);
     }
